@@ -146,8 +146,13 @@ def _apply_putaway_rule(
 	purpose: Purpose of Stock Entry
 	sync (optional): Sync with client side only for client side calls
 	"""
+<<<<<<< HEAD
 	if isinstance(items, str):
 		items = json.loads(items)
+=======
+	items = frappe.parse_json(items)
+	sync = bool(sync and frappe.parse_json(sync))
+>>>>>>> 272021f (fix(stock): copy every bundle the putaway preview splits)
 
 	items_not_accomodated, updated_table = [], []
 	item_wise_rules = defaultdict(list)
@@ -237,13 +242,21 @@ def _apply_putaway_rule(
 
 	if updated_table and _items_changed(items, updated_table, doctype):
 <<<<<<< HEAD
+<<<<<<< HEAD
 		items[:] = updated_table
 =======
 		_split_bundles(updated_table, doctype)
 >>>>>>> 360eee3 (fix(stock): keep the picked serial and batch bundle when a putaway rule re-targets or splits a row)
+=======
+		_split_bundles(updated_table, doctype, keep_original=not sync)
+>>>>>>> 272021f (fix(stock): copy every bundle the putaway preview splits)
 		frappe.msgprint(_("Applied putaway rules."), alert=True)
 
+<<<<<<< HEAD
 	if sync and json.loads(sync):  # sync with client side
+=======
+	if sync:  # sync with client side
+>>>>>>> 272021f (fix(stock): copy every bundle the putaway preview splits)
 		return items
 
 
@@ -353,8 +366,8 @@ def add_row(item, to_allocate, warehouse, updated_table, rule=None, serial_nos=N
 	return updated_table
 
 
-def _split_bundles(rows, doctype: str):
-	"""Give every row made from one source row its share of the picked bundle."""
+def _split_bundles(rows, doctype: str, keep_original: bool = True):
+	"""Give every row made from one source row its share of the picked bundle; the preview copies them all."""
 	qty_field = "transfer_qty" if doctype == "Stock Entry" else "stock_qty"
 	warehouse_field = "t_warehouse" if doctype == "Stock Entry" else "warehouse"
 
@@ -389,7 +402,7 @@ def _split_bundles(rows, doctype: str):
 				row.serial_and_batch_bundle = ""
 				continue
 
-			doc = bundle if idx == 0 else frappe.copy_doc(bundle, ignore_no_copy=False)
+			doc = bundle if idx == 0 and keep_original else frappe.copy_doc(bundle, ignore_no_copy=False)
 			doc.set("entries", [])
 			for entry in share:
 				doc.append("entries", entry)
